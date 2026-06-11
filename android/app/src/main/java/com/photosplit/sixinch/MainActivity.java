@@ -68,12 +68,8 @@ public class MainActivity extends BridgeActivity {
             WebView webView = bridge.getWebView();
             if (webView == null) return;
 
-            // 添加 JS 接口，用于从 WebView 中保存图片
-            webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
-
             // 设置下载监听（处理 blob URL 之外的下载）
             webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
-                // 对于普通 URL 的下载，用浏览器打开
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
@@ -81,29 +77,67 @@ public class MainActivity extends BridgeActivity {
         });
     }
 
-    /**
-     * 处理 <input type="file"> 文件选择
-     */
     @Override
-    public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
-                                      WebChromeClient.FileChooserParams fileChooserParams) {
-        if (this.filePathCallback != null) {
-            this.filePathCallback.onReceiveValue(null);
-        }
-        this.filePathCallback = filePathCallback;
+    public void onResume() {
+        super.onResume();
+        // 每次 Activity resume 时设置文件选择器回调
+        setupFileChooser();
+    }
 
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        intent.setType("image/*");
+    private void setupFileChooser() {
+        runOnUiThread(() -> {
+            WebView webView = bridge.getWebView();
+            if (webView == null) return;
 
-        try {
-            fileChooserLauncher.launch(Intent.createChooser(intent, "选择照片"));
-        } catch (Exception e) {
-            this.filePathCallback = null;
-            return false;
-        }
-        return true;
+            final WebChromeClient originalClient = webView.getWebChromeClient();
+            webView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback,
+                                                  FileChooserParams fileChooserParams) {
+                    if (MainActivity.this.filePathCallback != null) {
+                        MainActivity.this.filePathCallback.onReceiveValue(null);
+                    }
+                    MainActivity.this.filePathCallback = filePathCallback;
+
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    intent.setType("image/*");
+
+                    try {
+                        fileChooserLauncher.launch(Intent.createChooser(intent, "选择照片"));
+                    } catch (Exception e) {
+                        MainActivity.this.filePathCallback = null;
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public void onProgressChanged(WebView view, int newProgress) {
+                    if (originalClient != null) {
+                        originalClient.onProgressChanged(view, newProgress);
+                    }
+                }
+
+                @Override
+                public void onReceivedTitle(WebView view, String title) {
+                    if (originalClient != null) {
+                        originalClient.onReceivedTitle(view, title);
+                    }
+                }
+
+                @Override
+                public void onReceivedIcon(WebView view, android.graphics.Bitmap icon) {
+                    if (originalClient != null) {
+                        originalClient.onReceivedIcon(view, icon);
+                    }
+                }
+            });
+
+            // 添加 JS 接口
+            webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
+        });
     }
 
     /**
