@@ -1,0 +1,17 @@
+{
+  "appId": "com.photosplit.sixinch",
+  "appName": "照片切分",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": true,
+      "backgroundColor": "#0f7f6e"
+    }
+  }
+}

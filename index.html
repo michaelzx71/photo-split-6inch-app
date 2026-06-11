@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f7f6e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="照片切分">
+  <title>六寸相纸切两张三寸照片</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%230f7f6e'/%3E%3Crect x='10' y='14' width='44' height='16' fill='white'/%3E%3Crect x='10' y='34' width='44' height='16' fill='white'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    :root {
+      --ink: #1f2328;
+      --muted: #626a73;
+      --line: #d9dde3;
+      --paper: #ffffff;
+      --wash: #f4f1eb;
+      --panel: #fffaf0;
+      --accent: #0f7f6e;
+      --accent-strong: #086354;
+      --danger: #a33b2f;
+      --shadow: 0 18px 46px rgba(40, 34, 24, 0.16);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(135deg, rgba(15, 127, 110, 0.08), transparent 34%),
+        linear-gradient(225deg, rgba(191, 90, 62, 0.08), transparent 38%),
+        var(--wash);
+      color: var(--ink);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      height: 100%;
+      margin: 0 auto;
+      padding: 12px 10px 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      margin-bottom: 14px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 14px;
+      border-radius: var(--radius);
+      background: #e7e1d6;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 720;
+      box-shadow: inset 0 0 0 1px rgba(31, 35, 40, 0.08);
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 12px 26px rgba(15, 127, 110, 0.25);
+    }
+
+    .btn.primary:active {
+      background: var(--accent-strong);
+    }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .panel {
+      background: rgba(255, 250, 240, 0.92);
+      border: 1px solid rgba(31, 35, 40, 0.1);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .controls {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .upload-btn {
+      cursor: pointer;
+    }
+
+    .section {
+      padding: 14px 16px;
+    }
+    .section + .section {
+      border-top: 1px solid rgba(31, 35, 40, 0.06);
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+    }
+
+
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border-radius: var(--radius);
+      background: #e7e1d6;
+    }
+
+    .segmented button {
+      height: 40px;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 760;
+    }
+
+    .segmented button.active {
+      background: #fffdf8;
+      color: var(--ink);
+      box-shadow: 0 1px 0 rgba(31, 35, 40, 0.08);
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      min-width: 52px;
+    }
+
+    .field input[type="range"] {
+      flex: 1 1 auto;
+      min-width: 0;
+      accent-color: var(--accent);
+    }
+
+    .field output {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: rgba(31, 35, 40, 0.04);
+      padding: 2px 8px;
+      border-radius: 4px;
+      width: 70px;
+      text-align: right;
+    }
+
+
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+    }
+
+    .inline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 2px;
+    }
+    .inline-grid .btn {
+      min-height: 36px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      gap: 4px;
+    }
+    .inline-grid .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .number-input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      background: #fffdf8;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .photo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .thumb {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      flex: 0 0 auto;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #e8e1d4;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+
+    .thumb.active {
+      border-color: var(--accent);
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb span {
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      min-width: 16px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .thumb .thumb-del {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 18px;
+      height: 18px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 0 6px 0 6px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      opacity: 0.7;
+    }
+
+    .thumb:hover .thumb-del {
+      opacity: 1;
+      background: var(--danger);
+    }
+
+    .preview-area {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .photo-strip {
+      width: 72px;
+      flex: 0 0 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px 4px;
+      border-right: 1px solid rgba(31, 35, 40, 0.08);
+    }
+
+    .sheet-main {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      flex: 0 0 auto;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .sheet-scroll {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .sheet {
+      --sheet-w: min(100%, 720px);
+      position: relative;
+      width: var(--sheet-w);
+      aspect-ratio: 6 / 4;
+      margin: 0 auto;
+      display: grid;
+      gap: 0;
+      background: var(--paper);
+      box-shadow: 0 18px 44px rgba(40, 34, 24, 0.28);
+      transform-origin: top center;
+    }
+
+    .sheet.portrait {
+      aspect-ratio: 4 / 6;
+    }
+
+    .slot {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--paper);
+      border: 0 solid #efefef;
+      touch-action: none;
+    }
+
+    .slot + .slot {
+      border-left-width: 1px;
+    }
+
+    .slot.active {
+      outline: 2px solid rgba(15, 127, 110, 0.82);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+
+    .sheet.portrait .slot + .slot {
+      border-left-width: 0;
+      border-top-width: 1px;
+    }
+
+    .sheet::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      border-left: 1px dashed rgba(31, 35, 40, 0.12);
+      transform: translateX(-0.5px);
+    }
+
+    .sheet.portrait::after {
+      left: 0;
+      right: 0;
+      top: 50%;
+      bottom: auto;
+      border-left: 0;
+      border-top: 1px dashed rgba(31, 35, 40, 0.12);
+      transform: translateY(-0.5px);
+    }
+
+    .slot-inner {
+      position: absolute;
+      inset: var(--margin, 0.18in);
+      background: #fff1f1;
+      overflow: hidden;
+    }
+
+    .slot img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      max-width: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      transform-origin: center;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    .empty {
+      position: absolute;
+      inset: var(--margin, 0.18in);
+      display: grid;
+      place-items: center;
+      color: #9a9488;
+      background: #fff1f1;
+      font-size: 14px;
+      font-weight: 760;
+      text-align: center;
+    }
+
+    .page-strip {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px 14px;
+      overflow: auto;
+    }
+
+    .page-chip {
+      min-width: 54px;
+      height: 40px;
+      border-radius: 6px;
+      background: #e7e1d6;
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .page-chip.active {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .empty-state {
+      padding: 42px 22px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .print-root {
+      display: none;
+    }
+
+    .print-frame-host {
+      position: fixed;
+      left: -100vw;
+      top: 0;
+      width: 1px;
+      height: 1px;
+      border: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      z-index: 20;
+      width: min(92vw, 420px);
+      transform: translateX(-50%) translateY(20px);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      background: rgba(31, 35, 40, 0.92);
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.45;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 780px) {
+      .app {
+        padding: 12px 10px 28px;
+      }
+
+      .topbar {
+        margin-bottom: 10px;
+      }
+
+      .main {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 10px;
+        overflow: hidden;
+      }
+
+      .controls {
+        position: static;
+        order: 2;
+        align-self: start;
+      }
+
+      .preview-area {
+        order: 1;
+        position: sticky;
+        top: 0;
+        z-index: 8;
+        gap: 0;
+        overflow: hidden;
+        background: #fffaf0;
+      }
+
+      .sheet-header {
+        padding: 8px 10px;
+      }
+
+      .sheet-scroll {
+        padding: 8px 10px;
+        overflow: visible;
+      }
+
+      .sheet {
+        --sheet-w: min(100%, 300px);
+        box-shadow: 0 10px 24px rgba(40, 34, 24, 0.22);
+      }
+
+      .page-strip {
+        padding: 0 10px 8px;
+      }
+
+      .inline-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .sheet {
+        --sheet-w: min(100%, 260px);
+      }
+    }
+
+    @media print {
+      @page {
+        size: 6in 4in;
+        margin: 0;
+      }
+
+      html,
+      body {
+        width: 6in;
+        min-height: 4in;
+        background: #fff;
+      }
+
+      body * {
+        visibility: hidden !important;
+      }
+
+      .print-root,
+      .print-root * {
+        visibility: visible !important;
+      }
+
+      .print-root {
+        display: block;
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 6in;
+        background: #fff;
+      }
+
+      .print-page {
+        width: 6in;
+        height: 4in;
+        display: grid;
+        page-break-after: always;
+        break-after: page;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .print-page.portrait {
+        width: 4in;
+        height: 6in;
+      }
+
+      .print-slot {
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .print-slot + .print-slot {
+        border-left: 0.001in solid #fff;
+      }
+
+      .print-page.portrait .print-slot + .print-slot {
+        border-left: 0;
+        border-top: 0.001in solid #fff;
+      }
+
+      .print-frame {
+        position: absolute;
+        inset: var(--margin);
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .print-frame img {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        max-width: none;
+        transform-origin: center;
+      }
+
+      .print-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .print-frame-host {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="toolbar" aria-label="主要操作">
+        <label class="btn upload-btn" title="选择多张照片">
+          <input class="file-input" id="fileInput" type="file" accept="image/*" multiple>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4-4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          上传
+        </label>
+        <button class="btn" id="downloadBtn" type="button" disabled title="下载全部拼版图片">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          下载
+        </button>
+        <button class="btn primary" id="printBtn" type="button" disabled title="打印全部页面">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7v-6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          打印
+        </button>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="panel controls">
+        <section class="section">
+          <div class="field">
+            <label for="marginRange">白边宽度</label>
+            <input id="marginRange" type="range" min="0" max="0.35" value="0.18" step="0.01">
+            <output id="marginOut">0.18 in</output>
+          </div>
+          <div class="field">
+            <label for="zoomRange">照片缩放</label>
+            <input id="zoomRange" type="range" min="0.5" max="5" value="1" step="0.01">
+            <output id="zoomOut">100%</output>
+          </div>
+          <div class="inline-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <button class="btn" id="rotateLeftBtn" type="button" disabled title="向左旋转 90 度">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h9a7 7 0 1 1-6.33 10M4 7l4-4M4 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              左转
+            </button>
+            <button class="btn" id="rotateRightBtn" type="button" disabled title="向右旋转 90 度">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 7h-9a7 7 0 1 0 6.33 10M20 7l-4-4M20 7l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              右转
+            </button>
+            <button class="btn" id="fitBtn" type="button" disabled title="按当前方向填满画面">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              适配
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="panel preview-area">
+        <div class="photo-strip">
+          <div id="photoList" class="photo-list" aria-label="已选照片"></div>
+          <p class="hint" id="photoHint"></p>
+        </div>
+        <div class="sheet-main">
+        <div class="sheet-header">
+          <div class="counter" id="counter"></div>
+        </div>
+        <div class="sheet-scroll">
+          <div id="emptyState" class="empty-state"></div>
+          <div id="sheet" class="sheet" hidden aria-label="打印预览"></div>
+        </div>
+        <div id="pageStrip" class="page-strip" aria-label="页面选择"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="printRoot" class="print-root" aria-hidden="true"></div>
+  <iframe id="printFrame" class="print-frame-host" title="照片打印文档"></iframe>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    const state = {
+      photos: [],
+      orientation: "portrait",
+      activePage: 0,
+      activePhotoId: null,
+      paper: { w: 4, h: 6 },
+      pointer: null,
+      printReady: false,
+      printBuildId: 0,
+      printTimer: null,
+      printUrls: []
+    };
+
+    const els = {
+      fileInput: document.getElementById("fileInput"),
+      marginRange: document.getElementById("marginRange"),
+      zoomRange: document.getElementById("zoomRange"),
+      rotateLeftBtn: document.getElementById("rotateLeftBtn"),
+      rotateRightBtn: document.getElementById("rotateRightBtn"),
+      marginOut: document.getElementById("marginOut"),
+      zoomOut: document.getElementById("zoomOut"),
+      photoList: document.getElementById("photoList"),
+      photoHint: document.getElementById("photoHint"),
+      sheet: document.getElementById("sheet"),
+      emptyState: document.getElementById("emptyState"),
+      pageStrip: document.getElementById("pageStrip"),
+      counter: document.getElementById("counter"),
+      printRoot: document.getElementById("printRoot"),
+      printFrame: document.getElementById("printFrame"),
+      printBtn: document.getElementById("printBtn"),
+      downloadBtn: document.getElementById("downloadBtn"),
+      fitBtn: document.getElementById("fitBtn"),
+      toast: document.getElementById("toast")
+    };
+
+    const iconPhoto = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23efe8da'/%3E%3Cpath d='M18 55 33 38l10 11 7-8 12 14H18Z' fill='%23c8b99d'/%3E%3Ccircle cx='53' cy='26' r='7' fill='%23d6c7aa'/%3E%3C/svg%3E";
+
+    function showToast(message) {
+      els.toast.textContent = message;
+      els.toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove("show"), 2400);
+    }
+
+    function pageCount() {
+      return Math.ceil(state.photos.length / 2);
+    }
+
+    function pagePhotos(pageIndex = state.activePage) {
+      const start = pageIndex * 2;
+      return [state.photos[start], state.photos[start + 1]].filter(Boolean);
+    }
+
+    function getActivePhoto() {
+      return state.photos.find(photo => photo.id === state.activePhotoId) || null;
+    }
+
+    function ensureActivePhoto() {
+      const currentPagePhotos = pagePhotos();
+      if (!currentPagePhotos.length) {
+        state.activePhotoId = null;
+        return;
+      }
+      if (!currentPagePhotos.some(photo => photo.id === state.activePhotoId)) {
+        state.activePhotoId = currentPagePhotos[0].id;
+      }
+    }
+
+    function updateOutputs() {
+      const active = getActivePhoto();
+      const margin = active ? active.margin : Number(els.marginRange.value);
+      const zoom = active ? active.zoom : Number(els.zoomRange.value);
+      els.marginRange.value = margin;
+      els.zoomRange.value = zoom;
+      els.marginOut.value = `${Number(margin).toFixed(2)} in`;
+      els.zoomOut.value = `${Math.round(zoom * 100)}%`;
+    }
+
+    function updateControlAvailability() {
+      const hasPhotos = state.photos.length > 0;
+      els.printBtn.disabled = !hasPhotos || !state.printReady;
+      els.printBtn.title = state.printReady ? "打印全部页面" : "正在准备打印页面";
+      els.downloadBtn.disabled = !hasPhotos;
+      els.fitBtn.disabled = !getActivePhoto();
+      els.rotateLeftBtn.disabled = !getActivePhoto();
+      els.rotateRightBtn.disabled = !getActivePhoto();
+      [els.marginRange, els.zoomRange].forEach(input => {
+        input.disabled = !getActivePhoto();
+      });
+    }
+
+    function createPhoto(file, index) {
+      const url = URL.createObjectURL(file);
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve({
+          id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+          name: file.name || `照片 ${index + 1}`,
+          url,
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          margin: 0.18,
+          zoom: 1,
+          rotate: 0,
+          x: 0,
+          y: 0
+        });
+        img.onerror = () => resolve({
+          id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+          name: file.name || `照片 ${index + 1}`,
+          url: iconPhoto,
+          width: 1,
+          height: 1,
+          margin: 0.18,
+          zoom: 1,
+          rotate: 0,
+          x: 0,
+          y: 0
+        });
+        img.src = url;
+      });
+    }
+
+    async function handleFiles(files) {
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith("image/"));
+      if (!imageFiles.length) {
+        showToast("没有识别到图片文件。");
+        return;
+      }
+      const nextPhotos = await Promise.all(imageFiles.map(createPhoto));
+      state.photos.forEach(photo => {
+        if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+      });
+      state.photos = nextPhotos;
+      state.activePage = 0;
+      state.activePhotoId = state.photos[0]?.id || null;
+      render();
+      showToast(`已加入 ${state.photos.length} 张照片。`);
+    }
+
+    function renderPhotoList() {
+      els.photoList.innerHTML = "";
+      state.photos.forEach((photo, index) => {
+        const thumb = document.createElement("div");
+        thumb.className = `thumb${photo.id === state.activePhotoId ? " active" : ""}`;
+        thumb.setAttribute("role", "button");
+        thumb.setAttribute("tabindex", "0");
+        thumb.title = photo.name;
+        thumb.innerHTML = `<img alt="" src="${photo.url}"><span>${index + 1}</span>`;
+        thumb.addEventListener("click", () => {
+          state.activePage = Math.floor(index / 2);
+          state.activePhotoId = photo.id;
+          render();
+        });
+        const del = document.createElement("button");
+        del.className = "thumb-del";
+        del.textContent = "✕";
+        del.setAttribute("aria-label", `删除 ${photo.name}`);
+        del.addEventListener("click", (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          deletePhoto(photo.id);
+        });
+        thumb.appendChild(del);
+        els.photoList.appendChild(thumb);
+      });
+      els.photoHint.hidden = true;
+    }
+
+    function deletePhoto(photoId) {
+      const index = state.photos.findIndex(p => p.id === photoId);
+      if (index === -1) return;
+      const photo = state.photos[index];
+      if (photo.url.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+      state.photos.splice(index, 1);
+      if (state.photos.length === 0) {
+        state.activePage = 0;
+        state.activePhotoId = null;
+      } else if (state.activePhotoId === photoId) {
+        const newIndex = Math.min(index, state.photos.length - 1);
+        state.activePhotoId = state.photos[newIndex].id;
+        state.activePage = Math.floor(newIndex / 2);
+      }
+      render();
+      showToast(`已删除照片，剩余 ${state.photos.length} 张。`);
+    }
+
+    function renderPageStrip() {
+      els.pageStrip.innerHTML = "";
+      for (let i = 0; i < pageCount(); i += 1) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `page-chip${i === state.activePage ? " active" : ""}`;
+        chip.textContent = `${i + 1}`;
+        chip.title = `第 ${i + 1} 页`;
+        chip.addEventListener("click", () => {
+          state.activePage = i;
+          ensureActivePhoto();
+          render();
+        });
+        els.pageStrip.appendChild(chip);
+      }
+    }
+
+    function slotGridStyle() {
+      return "grid-template-rows: repeat(2, 1fr); grid-template-columns: 1fr;";
+    }
+
+    function photoFitMetrics(photo, frameRect) {
+      const frameRatio = frameRect.width / frameRect.height;
+      const imageRatio = photo.width / photo.height;
+      const baseWidth = imageRatio > frameRatio ? frameRect.width : frameRect.height * imageRatio;
+      const baseHeight = imageRatio > frameRatio ? frameRect.width / imageRatio : frameRect.height;
+      const angle = (normalizeRotation(photo.rotate) * Math.PI) / 180;
+      const rotatedWidth = Math.abs(baseWidth * Math.cos(angle)) + Math.abs(baseHeight * Math.sin(angle));
+      const rotatedHeight = Math.abs(baseWidth * Math.sin(angle)) + Math.abs(baseHeight * Math.cos(angle));
+      const rotationFit = Math.min(frameRect.width / rotatedWidth, frameRect.height / rotatedHeight, 1);
+      return {
+        baseWidth,
+        baseHeight,
+        rotationFit,
+        fittedRotatedWidth: rotatedWidth * rotationFit,
+        fittedRotatedHeight: rotatedHeight * rotationFit
+      };
+    }
+
+    function coverZoomForFrame(photo, frameRect) {
+      const metrics = photoFitMetrics(photo, frameRect);
+      const zoom = Math.max(
+        frameRect.width / metrics.fittedRotatedWidth,
+        frameRect.height / metrics.fittedRotatedHeight,
+        1
+      );
+      return clamp(Math.ceil(zoom * 100) / 100, 0.5, 5);
+    }
+
+    function imageTransform(photo, frameRect) {
+      const metrics = photoFitMetrics(photo, frameRect);
+      const width = metrics.baseWidth * metrics.rotationFit * photo.zoom;
+      const height = metrics.baseHeight * metrics.rotationFit * photo.zoom;
+      return {
+        width,
+        height,
+        left: `calc(50% + ${photo.x * 0.5}%)`,
+        top: `calc(50% + ${photo.y * 0.5}%)`,
+        transform: `translate(-50%, -50%) rotate(${normalizeRotation(photo.rotate)}deg)`
+      };
+    }
+
+    function renderSlot(photo, slotIndex) {
+      const slot = document.createElement("button");
+      slot.type = "button";
+      slot.className = `slot${photo?.id === state.activePhotoId ? " active" : ""}`;
+      slot.style.setProperty("--margin", `${photo?.margin ?? Number(els.marginRange.value)}in`);
+      slot.dataset.photoId = photo?.id || "";
+      slot.setAttribute("aria-label", photo ? `调整 ${photo.name}` : "空位");
+
+      if (!photo) {
+        slot.innerHTML = '<div class="empty">空位</div>';
+        return slot;
+      }
+
+      slot.innerHTML = `<div class="slot-inner"><img alt="${photo.name}" src="${photo.url}"></div>`;
+      const img = slot.querySelector("img");
+
+      requestAnimationFrame(() => {
+        const frame = slot.querySelector(".slot-inner");
+        const rect = frame.getBoundingClientRect();
+        const t = imageTransform(photo, rect);
+        img.style.width = `${t.width}px`;
+        img.style.height = `${t.height}px`;
+        img.style.left = t.left;
+        img.style.top = t.top;
+        img.style.transform = t.transform;
+      });
+
+      slot.addEventListener("click", () => {
+        state.activePhotoId = photo.id;
+        render();
+      });
+
+      slot.addEventListener("pointerdown", event => {
+        state.activePhotoId = photo.id;
+        state.pointer = {
+          id: photo.id,
+          startX: event.clientX,
+          startY: event.clientY,
+          x: photo.x,
+          y: photo.y
+        };
+        slot.setPointerCapture(event.pointerId);
+        renderPhotoList();
+        updateOutputs();
+      });
+
+      slot.addEventListener("pointermove", event => {
+        if (!state.pointer || state.pointer.id !== photo.id) return;
+        const rect = slot.getBoundingClientRect();
+        const dx = ((event.clientX - state.pointer.startX) / rect.width) * 100;
+        const dy = ((event.clientY - state.pointer.startY) / rect.height) * 100;
+        photo.x = clamp(Math.round(state.pointer.x + dx), -45, 45);
+        photo.y = clamp(Math.round(state.pointer.y + dy), -45, 45);
+        updateOutputs();
+        const frame = slot.querySelector(".slot-inner");
+        const nextImg = slot.querySelector("img");
+        const t = imageTransform(photo, frame.getBoundingClientRect());
+        nextImg.style.left = t.left;
+        nextImg.style.top = t.top;
+        nextImg.style.transform = t.transform;
+      });
+
+      slot.addEventListener("pointerup", () => {
+        state.pointer = null;
+        schedulePrintBuild();
+      });
+
+      slot.addEventListener("pointercancel", () => {
+        state.pointer = null;
+        schedulePrintBuild();
+      });
+
+      return slot;
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function normalizeRotation(value) {
+      let angle = Number(value) || 0;
+      while (angle > 180) angle -= 360;
+      while (angle < -180) angle += 360;
+      return angle;
+    }
+
+    function renderSheet() {
+      ensureActivePhoto();
+      const photos = pagePhotos();
+      els.emptyState.hidden = true;
+      els.sheet.hidden = false;
+      els.sheet.classList.add("portrait");
+      els.sheet.style = slotGridStyle();
+      els.sheet.innerHTML = "";
+      for (let i = 0; i < 2; i += 1) {
+        els.sheet.appendChild(renderSlot(photos[i], i));
+      }
+      els.counter.textContent = "";
+    }
+
+    function renderPrintRoot() {
+      els.printRoot.innerHTML = "";
+      for (let page = 0; page < pageCount(); page += 1) {
+        const printPage = document.createElement("div");
+        printPage.className = "print-page portrait";
+        printPage.style.cssText = slotGridStyle();
+        pagePhotos(page).forEach(photo => {
+          const slot = document.createElement("div");
+          slot.className = "print-slot";
+          const frame = document.createElement("div");
+          frame.className = "print-frame";
+          frame.style.setProperty("--margin", `${photo.margin}in`);
+          const img = document.createElement("img");
+          img.alt = "";
+          img.src = photo.url;
+          frame.appendChild(img);
+          slot.appendChild(frame);
+          printPage.appendChild(slot);
+
+          requestAnimationFrame(() => {
+            const rect = frame.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            const t = imageTransform(photo, rect);
+            img.style.width = `${t.width}px`;
+            img.style.height = `${t.height}px`;
+            img.style.left = t.left;
+            img.style.top = t.top;
+            img.style.transform = t.transform;
+          });
+        });
+        if (pagePhotos(page).length === 1) {
+          const slot = document.createElement("div");
+          slot.className = "print-slot";
+          printPage.appendChild(slot);
+        }
+        els.printRoot.appendChild(printPage);
+      }
+    }
+
+    function render() {
+      renderPhotoList();
+      renderPageStrip();
+      renderSheet();
+      updateOutputs();
+      updateControlAvailability();
+      schedulePrintBuild();
+    }
+
+    function updateActivePhoto(patch) {
+      const active = getActivePhoto();
+      if (!active) return;
+      Object.assign(active, patch);
+      render();
+    }
+
+    function activePhotoFrameRect(photoId) {
+      const slot = Array.from(els.sheet.querySelectorAll(".slot"))
+        .find(item => item.dataset.photoId === photoId);
+      return slot?.querySelector(".slot-inner")?.getBoundingClientRect();
+    }
+
+    function fitActivePhoto() {
+      const active = getActivePhoto();
+      const rect = active ? activePhotoFrameRect(active.id) : null;
+      if (!active || !rect) return;
+      const zoom = coverZoomForFrame(active, rect);
+      updateActivePhoto({ zoom, x: 0, y: 0 });
+      showToast("已按当前方向填满画面。");
+    }
+
+    function rotateActivePhoto(delta) {
+      const active = getActivePhoto();
+      if (!active) return;
+      updateActivePhoto({ rotate: normalizeRotation((active.rotate || 0) + delta) });
+    }
+
+    async function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    async function drawPageToCanvas(pageIndex) {
+      const scale = 300;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(state.paper.w * scale);
+      canvas.height = Math.round(state.paper.h * scale);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const slotW = canvas.width;
+      const slotH = canvas.height / 2;
+
+      for (const [i, photo] of pagePhotos(pageIndex).entries()) {
+        const slotX = 0;
+        const slotY = i * slotH;
+        const marginPx = photo.margin * scale;
+        const frame = {
+          x: slotX + marginPx,
+          y: slotY + marginPx,
+          width: slotW - marginPx * 2,
+          height: slotH - marginPx * 2
+        };
+        const img = await loadImage(photo.url);
+        const angle = (normalizeRotation(photo.rotate) * Math.PI) / 180;
+        const metrics = photoFitMetrics(photo, frame);
+        const drawW = metrics.baseWidth * metrics.rotationFit * photo.zoom;
+        const drawH = metrics.baseHeight * metrics.rotationFit * photo.zoom;
+        const cx = frame.x + frame.width / 2 + (photo.x / 100) * frame.width * 0.5;
+        const cy = frame.y + frame.height / 2 + (photo.y / 100) * frame.height * 0.5;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(frame.x, frame.y, frame.width, frame.height);
+        ctx.clip();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle);
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+      }
+      drawDivider(ctx, canvas.width, canvas.height);
+      return canvas;
+    }
+
+    function drawDivider(ctx, width, height) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.08)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([10, 12]);
+      ctx.beginPath();
+      ctx.moveTo(0, height / 2);
+      ctx.lineTo(width, height / 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function canvasToBlob(canvas, type = "image/jpeg", quality = 0.94) {
+      return new Promise(resolve => canvas.toBlob(resolve, type, quality));
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function isNativeAndroid() {
+      return !!(window.AndroidNative && window.AndroidNative.isNative && window.AndroidNative.isNative());
+    }
+
+    function canvasToBase64(canvas) {
+      return canvas.toDataURL("image/jpeg", 0.94).split(",")[1];
+    }
+
+    async function downloadAllPages() {
+      if (!state.photos.length) return;
+      els.downloadBtn.disabled = true;
+
+      if (isNativeAndroid()) {
+        showToast(`正在保存 ${pageCount()} 张拼版图片到相册…`);
+        for (let page = 0; page < pageCount(); page += 1) {
+          const canvas = await drawPageToCanvas(page);
+          const base64 = canvasToBase64(canvas);
+          window.AndroidNative.saveImage(base64, `六寸拼版-${page + 1}.jpg`);
+          await wait(300);
+        }
+        updateControlAvailability();
+        return;
+      }
+
+      showToast(`开始下载 ${pageCount()} 张拼版图片。`);
+      for (let page = 0; page < pageCount(); page += 1) {
+        const canvas = await drawPageToCanvas(page);
+        const blob = await canvasToBlob(canvas);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `六寸拼版-${page + 1}.jpg`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        await wait(450);
+      }
+      updateControlAvailability();
+      showToast("拼版图片已逐张下载。");
+    }
+
+    function updatePrintPageSizeStyle() {
+      const styleId = "dynamic-print-size";
+      document.getElementById(styleId)?.remove();
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.textContent = `
+        @media print {
+          @page { size: ${state.paper.w}in ${state.paper.h}in; margin: 0; }
+          html, body { width: ${state.paper.w}in; min-height: ${state.paper.h}in; }
+          .print-root, .print-page { width: ${state.paper.w}in; }
+          .print-page { height: ${state.paper.h}in; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function schedulePrintBuild(delay = 160) {
+      clearTimeout(state.printTimer);
+      state.printReady = false;
+      updateControlAvailability();
+      if (!state.photos.length) {
+        els.printRoot.replaceChildren();
+        resetPrintUrls();
+        els.printFrame.removeAttribute("srcdoc");
+        return;
+      }
+      const buildId = ++state.printBuildId;
+      state.printTimer = setTimeout(() => {
+        preparePrint(buildId);
+      }, delay);
+    }
+
+    async function preparePrint(buildId = ++state.printBuildId) {
+      if (!state.photos.length) {
+        state.printReady = false;
+        els.printRoot.replaceChildren();
+        updateControlAvailability();
+        return false;
+      }
+      const fragment = document.createDocumentFragment();
+      const urls = [];
+      for (let page = 0; page < pageCount(); page += 1) {
+        const canvas = await drawPageToCanvas(page);
+        if (buildId !== state.printBuildId) return false;
+        const blob = await canvasToBlob(canvas, "image/jpeg", 0.98);
+        if (buildId !== state.printBuildId) return false;
+        const url = URL.createObjectURL(blob);
+        urls.push(url);
+        const printPage = document.createElement("div");
+        printPage.className = "print-page portrait";
+        const img = document.createElement("img");
+        img.className = "print-canvas";
+        img.alt = "";
+        img.src = url;
+        printPage.appendChild(img);
+        fragment.appendChild(printPage);
+      }
+      if (buildId !== state.printBuildId) return false;
+      resetPrintUrls();
+      state.printUrls = urls;
+      els.printRoot.replaceChildren(fragment);
+      updatePrintPageSizeStyle();
+      await updatePrintFrameDocument();
+      if (buildId !== state.printBuildId) return false;
+      state.printReady = true;
+      updateControlAvailability();
+      return true;
+    }
+
+    function resetPrintUrls() {
+      state.printUrls.forEach(url => URL.revokeObjectURL(url));
+      state.printUrls = [];
+    }
+
+    function updatePrintFrameDocument() {
+      const pages = state.printUrls.map(url => `<section class="page"><img src="${url}" alt=""></section>`).join("");
+      return new Promise(resolve => {
+        const done = () => {
+          els.printFrame.removeEventListener("load", done);
+          resolve();
+        };
+        els.printFrame.addEventListener("load", done);
+        els.printFrame.srcdoc = `<!doctype html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="utf-8">
+            <style>
+              @page { size: ${state.paper.w}in ${state.paper.h}in; margin: 0; }
+              html, body { margin: 0; padding: 0; background: white; width: ${state.paper.w}in; }
+              .page { width: ${state.paper.w}in; height: ${state.paper.h}in; margin: 0; page-break-after: always; break-after: page; overflow: hidden; background: white; }
+              .page:last-child { page-break-after: auto; break-after: auto; }
+              img { display: block; width: 100%; height: 100%; object-fit: fill; }
+            </style>
+          </head>
+          <body>${pages}</body>
+          </html>`;
+        setTimeout(done, 1200);
+      });
+    }
+
+    async function shareAllPages() {
+      if (!state.photos.length) return;
+      if (!isNativeAndroid()) {
+        printAll();
+        return;
+      }
+      els.printBtn.disabled = true;
+      showToast(`正在准备 ${pageCount()} 张图片以供分享…`);
+      for (let page = 0; page < pageCount(); page += 1) {
+        const canvas = await drawPageToCanvas(page);
+        const base64 = canvasToBase64(canvas);
+        window.AndroidNative.shareImage(base64, `六寸拼版-${page + 1}.jpg`);
+        await wait(300);
+      }
+      updateControlAvailability();
+    }
+
+    function printAll() {
+      if (state.photos.length === 0) return;
+      if (!state.printReady) {
+        showToast("正在准备打印页面，稍等一秒再点打印。");
+        schedulePrintBuild(0);
+        return;
+      }
+      showToast("打印预览应只显示照片拼版。");
+      const printWindow = els.printFrame.contentWindow;
+      if (printWindow) {
+        printWindow.focus();
+        printWindow.print();
+      } else {
+        window.print();
+      }
+    }
+
+    els.fileInput.addEventListener("change", event => handleFiles(event.target.files));
+    els.marginRange.addEventListener("input", () => updateActivePhoto({ margin: Number(els.marginRange.value) }));
+    els.zoomRange.addEventListener("input", () => updateActivePhoto({ zoom: Number(els.zoomRange.value) }));
+    els.rotateLeftBtn.addEventListener("click", () => rotateActivePhoto(-90));
+    els.rotateRightBtn.addEventListener("click", () => rotateActivePhoto(90));
+    els.fitBtn.addEventListener("click", fitActivePhoto);
+    els.printBtn.addEventListener("click", () => {
+      if (isNativeAndroid()) {
+        shareAllPages();
+      } else {
+        printAll();
+      }
+    });
+    els.downloadBtn.addEventListener("click", downloadAllPages);
+    window.addEventListener("resize", () => renderSheet());
+
+    // 在 Android 原生环境中，调整按钮文案
+    if (isNativeAndroid()) {
+      els.printBtn.querySelector("svg").outerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      els.printBtn.lastChild.textContent = "分享";
+      els.printBtn.title = "分享全部拼版图片";
+      els.downloadBtn.lastChild.textContent = "保存";
+      els.downloadBtn.title = "保存全部拼版图片到相册";
+    }
+
+    window.photoSplitApp = {
+      state,
+      render,
+      handleFiles,
+      drawPageToCanvas,
+      preparePrint,
+      schedulePrintBuild
+    };
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>

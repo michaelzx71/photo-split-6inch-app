@@ -1,0 +1,28 @@
+{
+  "name": "photo-split-6inch",
+  "version": "1.0.0",
+  "description": "六寸相纸切两张三寸照片 - 把多张照片自动拼成 6 寸相纸上的两张 3 寸照片",
+  "main": "index.js",
+  "scripts": {
+    "build": "rm -rf www && mkdir -p www && cp index.html manifest.webmanifest sw.js www/ && cp -r icons www/",
+    "cap:init": "npx cap add android",
+    "cap:sync": "npm run build && npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:copy": "npm run build && npx cap copy android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  },
+  "keywords": [
+    "photo",
+    "split",
+    "print",
+    "6inch"
+  ],
+  "author": "",
+  "license": "MIT"
+}

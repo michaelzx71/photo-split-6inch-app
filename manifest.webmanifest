@@ -1,0 +1,25 @@
+{
+  "name": "六寸相纸切两张三寸照片",
+  "short_name": "照片切分",
+  "description": "把多张照片自动拼成 6 寸相纸上的两张 3 寸照片，支持下载和打印。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f1eb",
+  "theme_color": "#0f7f6e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
