@@ -27,10 +27,13 @@ import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.BridgeActivity;
 
+import org.json.JSONArray;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 
 public class MainActivity extends BridgeActivity {
 
@@ -199,46 +202,79 @@ public class MainActivity extends BridgeActivity {
                 }
             });
         }
+/**
+ * 一次性分享多张 base64 编码的图片（弹一次分享对话框）
+ * 从 JS 中调用: AndroidNative.shareMultipleImages(jsonBase64Array, jsonFileNameArray)
+ * 例如: shareMultipleImages('["base64_1","base64_2"]', '["照片1.jpg","照片2.jpg"]')
+ */
+@JavascriptInterface
+public void shareMultipleImages(String jsonBase64Array, String jsonFileNames) {
+    runOnUiThread(() -> {
+        try {
+            JSONArray base64Arr = new JSONArray(jsonBase64Array);
+            JSONArray namesArr = new JSONArray(jsonFileNames);
+            int count = base64Arr.length();
+            if (count == 0) {
+                showToast("没有图片可分享");
+                return;
+            }
 
-        /**
-         * 分享 base64 编码的图片
-         * 从 JS 中调用: AndroidNative.shareImage(base64Data, fileName)
-         */
-        @JavascriptInterface
-        public void shareImage(String base64Data, String fileName) {
-            runOnUiThread(() -> {
-                try {
-                    byte[] imageBytes = Base64.decode(base64Data, Base64.DEFAULT);
-                    Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(imageBytes));
-                    if (bitmap == null) {
-                        showToast("图片解码失败");
-                        return;
-                    }
+            // 清理旧缓存
+            File cacheDir = new File(getCacheDir(), "share");
+            if (cacheDir.exists()) {
+                File[] oldFiles = cacheDir.listFiles();
+                if (oldFiles != null) for (File f : oldFiles) f.delete();
+            } else {
+                cacheDir.mkdirs();
+            }
 
-                    // 保存到缓存目录
-                    File cacheDir = new File(getCacheDir(), "share");
-                    if (!cacheDir.exists()) cacheDir.mkdirs();
-                    File file = new File(cacheDir, fileName);
-                    FileOutputStream fos = new FileOutputStream(file);
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 94, fos);
-                    fos.close();
+            ArrayList<Uri> uris = new ArrayList<>();
+            for (int i = 0; i < count; i++) {
+                String base64 = base64Arr.getString(i);
+                String name = namesArr.getString(i);
 
-                    // 通过 FileProvider 分享
-                    Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                            MainActivity.this,
-                            getPackageName() + ".fileprovider",
-                            file
-                    );
+                byte[] imageBytes = Base64.decode(base64, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeStream(new ByteArrayInputStream(imageBytes));
+                if (bitmap == null) continue;
 
-                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                    shareIntent.setType("image/jpeg");
-                    shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                    shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    startActivity(Intent.createChooser(shareIntent, "分享照片"));
-                } catch (Exception e) {
-                    showToast("分享失败: " + e.getMessage());
-                }
-            });
+                File file = new File(cacheDir, name);
+                FileOutputStream fos = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 94, fos);
+                fos.close();
+                bitmap.recycle();
+
+                Uri uri = androidx.core.content.FileProvider.getUriForFile(
+                        MainActivity.this,
+                        getPackageName() + ".fileprovider",
+                        file
+                );
+                uris.add(uri);
+            }
+
+            if (uris.isEmpty()) {
+                showToast("图片解码失败");
+                return;
+            }
+
+            Intent shareIntent;
+            if (uris.size() == 1) {
+                // 单张图片用 ACTION_SEND
+                shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+            } else {
+                // 多张图片用 ACTION_SEND_MULTIPLE
+                shareIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
+                shareIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+            }
+            shareIntent.setType("image/jpeg");
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(Intent.createChooser(shareIntent, "分享 " + uris.size() + " 张照片"));
+        } catch (Exception e) {
+            showToast("分享失败: " + e.getMessage());
+        }
+    });
+}
         }
 
         /**

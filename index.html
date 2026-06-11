@@ -1418,13 +1418,19 @@
         return;
       }
       els.printBtn.disabled = true;
-      showToast(`正在准备 ${pageCount()} 张图片以供分享…`);
-      for (let page = 0; page < pageCount(); page += 1) {
+      const total = pageCount();
+      showToast(`正在准备 ${total} 张图片以供分享…`);
+      const base64Arr = [];
+      const nameArr = [];
+      for (let page = 0; page < total; page += 1) {
         const canvas = await drawPageToCanvas(page);
-        const base64 = canvasToBase64(canvas);
-        window.AndroidNative.shareImage(base64, `六寸拼版-${page + 1}.jpg`);
-        await wait(300);
+        base64Arr.push(canvasToBase64(canvas));
+        nameArr.push(`六寸拼版-${page + 1}.jpg`);
       }
+      window.AndroidNative.shareMultipleImages(
+        JSON.stringify(base64Arr),
+        JSON.stringify(nameArr)
+      );
       updateControlAvailability();
     }
 
